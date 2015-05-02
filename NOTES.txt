@@ -1,0 +1,35 @@
+輸入檔案:
+因為只能input一個檔案，所以要把train.lab train.ark變成一個檔案
+我寫了editfeature.cpp，可以點開檔案修改路徑。
+編譯方式就是 g++ editfeature.cpp -o OUTPUT
+執行就是 ./OUTPUT > [NEWFILE]
+
+產生出來的檔案格式會是
+音檔的名字(char*)
+這個音檔frame的數目(int)
+這個音檔所有的label(int*)
+這個音檔所有的feature(float*)
+
+svm_struct_api.c裡頭需要完成的funtion:
+read_struct_examples:
+	這個已經寫完了，但是如果想要修正的話可以再討論!
+	
+classify_struct_example:
+	用於predict的function，即 ybar = argmax w*psi(x,y)
+
+find_most_violated_constraint_slackrescaling 
+	or
+find_most_violated_constraint_marginrescaling
+	這兩個要完成其中一個，應該是打算完成後者，即 L(w)=max(loss(y,ybar)+w*psi(x,y))-w*psi(x,y)
+
+psi:
+	這個已經寫完了，但是如果想要修正的話可以再討論!
+
+loss:
+	這個已經寫完了，但是是很一般的，可能可以考慮用別的loss function(例如加入cost sensitive)
+
+write_struct_model、read_struct_model:
+	io的function。
+
+write_label:
+	將framewise的phone sequence Trimming後輸出。
