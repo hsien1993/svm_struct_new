@@ -257,7 +257,8 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   /* insert your code for computing the label ybar here */
   int i,j,k,f,index;
   float Value[PhoneNum];
-  float temp,transValue,maxValue,obserValue;
+  float obserValue[PhoneNum];
+  float temp,transValue,maxValue;
   VPATH **node;
   int   pre;
 
@@ -279,14 +280,21 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 
   //find viterbi path
   for(f = 1; f < y.frameNum; f++){
+    //observation
+    for(i = 0; i < PhoneNum; i++){
+      for(j = 0; j < Dim; j++){
+        obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim]);
+      }
+    }
+    //transition
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
       for(j = 0; j < PhoneNum; j++){
         transValue = node[f-1][j].score + sm->w[PhoneNum*(Dim+i)+j];
-        for(k = 0; k < Dim; k++){
-          obserValue += x.feature[k+(f-1)*Dim]*(sm->w[k+j*Dim]);
-        }
-        Value[j] = transValue + obserValue;
+        //for(k = 0; k < Dim; k++){
+        //  obserValue += x.feature[k+(f-1)*Dim]*(sm->w[k+j*Dim]);
+        //}
+        Value[j] = transValue + obserValue[j];
       }
       temp = Value[0];
       for(j = 0; j < PhoneNum; j++){
@@ -303,11 +311,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       if(i != y.phone[f]){
         node[f][i].score += 1.0;      
       }
-    //printf("node[%d][%d].pre = %d",f,i,node[f][i].pre);
     }
-    //for(i = 0; i < PhoneNum; i++)
-    //  printf("layer:%d\t %d\t",f, node[f][i].pre);
-    //printf("\n");
   }
 
   //end viterbi
