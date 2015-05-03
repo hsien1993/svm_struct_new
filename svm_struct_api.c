@@ -259,15 +259,19 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   float *Value;
   float temp,maxValue;
   VPATH **node;
-  int   best;
+  int   pre;
 
-  printf("find_most_violated_constraint_marginrescaling\n");
+  //printf("find_most_violated_constraint_marginrescaling\n");
   node = (VPATH**)my_malloc(sizeof(VPATH*)*y.frameNum);
   Value = (float*)my_malloc(sizeof(float)*PhoneNum);
   for(i = 0; i < y.frameNum; i++){
     node[i] = (VPATH*)my_malloc(sizeof(VPATH)*PhoneNum);
   }
-  printf("start Viterbi\n");
+  printf("w =");
+  for(i = 0; i < sm->sizePsi; i++)
+    printf("%f ",sm->w[i]);
+  printf("\n");
+
   //start Viterbi
   for(i = 0; i < PhoneNum; i++){
     node[0][i].pre = i;
@@ -275,10 +279,10 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     node[0][i].frame = 0;
     for(j = 0; j < Dim; j++){
       node[0][i].score += x.feature[j]*(sm->w[j+i*Dim]);
-      //loss
-      if(i != y.phone[0])
-        node[0][i].score += 1;
     }
+    //loss
+    if(i != y.phone[0])
+      node[0][i].score += 1;
     //printf("node[0][%d].score = %f\n",i,node[0][i].score);
   }
 
@@ -289,19 +293,14 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       node[f][i].frame = f;
       for(j = 0; j < PhoneNum; j++){
         Value[j] = node[f-1][j].score + sm->w[PhoneNum*(Dim+j)+i];
-//printf("node[%d][%d].score = %f \n",f-1,j,node[f-1][j].score);
-//printf("Value[%d] = %f \n",j,Value[j]);
       }
       temp = Value[0];
-     // intex = 0;
-      for(i = 0; i < PhoneNum; i++){
-        if(temp <= Value[i]){
-          temp = Value[i];
-          index = i;
-//printf("index = %d",index);
+      for(j = 0; j < PhoneNum; j++){
+        if(temp <= Value[j]){
+          temp = Value[j];
+          index = j;
         }
       }
-//printf("\n");
       maxValue = temp;
 
       node[f][i].pre = index;
@@ -310,13 +309,15 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       if(i != y.phone[f]){
         node[f][i].score += 1;      
       }
-    printf("node[%d][%d].pre = %d",f,i,node[f][i].pre);
+    //printf("node[%d][%d].pre = %d",f,i,node[f][i].pre);
     }
-    printf("\n");
+    //for(i = 0; i < PhoneNum; i++)
+    //  printf("layer:%d\t %d\t",f, node[f][i].pre);
+    //printf("\n");
   }
 
   //end viterbi
-  printf("end viterbi\n");
+  //printf("end viterbi\n");
   maxValue = node[y.frameNum-1][0].score;
   for(i = 0; i < PhoneNum; i++){
     if(maxValue < node[y.frameNum-1][i].score){
@@ -330,25 +331,21 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   strcpy(ybar.frameID, y.frameID);
   ybar.phone = (int*)my_malloc(sizeof(int)*y.frameNum);
   ybar.frameNum = y.frameNum;
-printf("%s \n",ybar.frameID);
-  best = node[y.frameNum-1][index].pre;
-printf("%d \n", best);
-  ybar.phone[y.frameNum-1] = index;
-  for(f = y.frameNum-2; f >=0; f--){
-    j = node[f][best].label;
-    printf("%d ",j);
-    best = node[f][j].pre;
-    ybar.phone[f] = j;    
+  pre = node[y.frameNum-1][index].pre;
+  //ybar.phone[y.frameNum-1] = index;
+  for(f = y.frameNum-1; f >=0; f--){
+    index = node[f][pre].label;
+    ybar.phone[f] = index;
+    pre = node[f][index].pre; 
   }
-printf("\n===============\n");
-  //printf("free node\n");
-  //for(i = 0; i < y.frameNum; i++)
-  //  free(node[i]);
-  free(node);
-
   for(i = 0; i < y.frameNum; i++)
-    printf("%d ", ybar.phone[i]);
-  printf("\n");
+    free(node[i]);
+  free(node);
+  free(Value);
+
+//  for(i = 0; i < y.frameNum; i++)
+//    printf("[%d] %d \n",i, ybar.phone[i]);
+//  printf("\n====%d====\n",i);
 
   return(ybar);
 }
@@ -425,8 +422,8 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
       words[i].weight = transfeature[i-PhoneNum*Dim];
     }
   }
-  words[SIZE].wnum = SIZE+1;
-  words[SIZE].weight = 0; //terminator
+  words[SIZE].wnum = 0;
+  //words[SIZE].weight = 0; //terminator
   fvec=create_svector(words,"",1.0);
 
   //free
@@ -457,7 +454,7 @@ double      loss(LABEL y, LABEL ybar, STRUCT_LEARN_PARM *sparm)
        find_most_violated_constraint_???(x, y, sm) has to return the
        highest scoring label with the largest loss. */
   }
-  printf("call LOSS, error =%f \n",error);
+  //printf("call LOSS, error =%f \n",error);
   return error;
 }
 
