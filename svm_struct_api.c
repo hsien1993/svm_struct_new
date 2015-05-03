@@ -255,44 +255,38 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
      empty_label(y). */
   LABEL ybar;
   /* insert your code for computing the label ybar here */
-  int i,j,f,index;
-  float *Value;
-  float temp,maxValue;
+  int i,j,k,f,index;
+  float Value[PhoneNum];
+  float temp,transValue,maxValue,obserValue;
   VPATH **node;
   int   pre;
 
-  //printf("find_most_violated_constraint_marginrescaling\n");
   node = (VPATH**)my_malloc(sizeof(VPATH*)*y.frameNum);
-  Value = (float*)my_malloc(sizeof(float)*PhoneNum);
   for(i = 0; i < y.frameNum; i++){
     node[i] = (VPATH*)my_malloc(sizeof(VPATH)*PhoneNum);
   }
-  printf("w =");
-  for(i = 0; i < sm->sizePsi; i++)
-    printf("%f ",sm->w[i]);
-  printf("\n");
 
   //start Viterbi
   for(i = 0; i < PhoneNum; i++){
     node[0][i].pre = i;
     node[0][i].label = i;
-    node[0][i].frame = 0;
-    for(j = 0; j < Dim; j++){
-      node[0][i].score += x.feature[j]*(sm->w[j+i*Dim]);
-    }
+    node[0][i].score = 0;
     //loss
-    if(i != y.phone[0])
-      node[0][i].score += 1;
+    //if(i != y.phone[0])
+    //  node[0][i].score += 1.0;
     //printf("node[0][%d].score = %f\n",i,node[0][i].score);
   }
 
-  //finde viterbi path
+  //find viterbi path
   for(f = 1; f < y.frameNum; f++){
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
-      node[f][i].frame = f;
       for(j = 0; j < PhoneNum; j++){
-        Value[j] = node[f-1][j].score + sm->w[PhoneNum*(Dim+j)+i];
+        transValue = node[f-1][j].score + sm->w[PhoneNum*(Dim+i)+j];
+        for(k = 0; k < Dim; k++){
+          obserValue += x.feature[k+(f-1)*Dim]*(sm->w[k+j*Dim]);
+        }
+        Value[j] = transValue + obserValue;
       }
       temp = Value[0];
       for(j = 0; j < PhoneNum; j++){
@@ -307,7 +301,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       node[f][i].score = maxValue;
       //loss
       if(i != y.phone[f]){
-        node[f][i].score += 1;      
+        node[f][i].score += 1.0;      
       }
     //printf("node[%d][%d].pre = %d",f,i,node[f][i].pre);
     }
@@ -336,12 +330,12 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   for(f = y.frameNum-1; f >=0; f--){
     index = node[f][pre].label;
     ybar.phone[f] = index;
-    pre = node[f][index].pre; 
+    if(f>0)pre = node[f][index].pre; 
   }
   for(i = 0; i < y.frameNum; i++)
     free(node[i]);
   free(node);
-  free(Value);
+  //free(Value);
 
 //  for(i = 0; i < y.frameNum; i++)
 //    printf("[%d] %d \n",i, ybar.phone[i]);
