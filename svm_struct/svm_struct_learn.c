@@ -192,10 +192,13 @@ void svm_learn_struct(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	      ybar=find_most_violated_constraint_slackrescaling(ex[i].x,
 								ex[i].y,sm,
 								sparm);
-	    else
+	    else{
+	    	//printf("find_most_violated_constraint_marginrescaling(ex[i].x, ex[i].y,sm, sparm);\n");
 	      ybar=find_most_violated_constraint_marginrescaling(ex[i].x,
 								 ex[i].y,sm,
 								 sparm);
+
+	  	}
 	    rt_viol+=MAX(get_runtime()-rt2,0);
 	    
 	    if(empty_label(ybar)) {
@@ -208,7 +211,7 @@ void svm_learn_struct(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	      continue;
 	    }
 	  
-	    /**** get psi(y)-psi(ybar) ****/
+	    //printf("/**** get psi(y)-psi(ybar) ****/\n");
 	    rt2=get_runtime();
 	    if(fycache) 
 	      fy=copy_svector(fycache[i]);
@@ -217,7 +220,7 @@ void svm_learn_struct(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	    fybar=psi(ex[i].x,ybar,sm,sparm);
 	    rt_psi+=MAX(get_runtime()-rt2,0);
 	    
-	    /**** scale feature vector and margin by loss ****/
+	    //printf("/**** scale feature vector and margin by loss ****/\n");
 	    lossval=loss(ex[i].y,ybar,sparm);
 	    if(sparm->slack_norm == 2)
 	      lossval=sqrt(lossval);
@@ -232,6 +235,7 @@ void svm_learn_struct(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	    margin=lossval;
 
 	    /**** create constraint for current ybar ****/
+	    //printf("append_svector_list\n");
 	    append_svector_list(fy,fybar);/* append the two vector lists */
 	    doc=create_example(cset.m,0,i+1,1,fy);
 
@@ -660,7 +664,7 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	      i=randmapping[uptr];
 	    else
 	      i=uptr;
-	    /* find most violating fydelta=fy-fybar and rhs for example i */
+	    printf("/* find most violating fydelta=fy-fybar and rhs for example i */\n");
 	    find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],
 					  fycache[i],n,sm,sparm,
 					  &rt_viol,&rt_psi,&argmax_count);
@@ -707,19 +711,21 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	  if(struct_verbosity>=1) 
 	    print_percent_progress(&progress,n,10,".");
 
-	  /* compute most violating fydelta=fy-fybar and rhs for example i */
+	  //printf("/* compute most violating fydelta=fy-fybar and rhs for example i */\n");
 	  find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],fycache[i],n,
 				      sm,sparm,&rt_viol,&rt_psi,&argmax_count);
-	  /* add current fy-fybar to lhs of constraint */
+	  //printf("/* add current fy-fybar to lhs of constraint */\n");
 	  if(kparm->kernel_type == LINEAR) {
+	  	//printf("/* add fy-fybar to sum */");
 	    add_list_n_ns(lhs_n,fydelta,1.0); /* add fy-fybar to sum */
 	    free_svector(fydelta);
 	  }
 	  else {
+	  	//printf("/* add fy-fybar to vector list */");
 	    append_svector_list(fydelta,lhs); /* add fy-fybar to vector list */
 	    lhs=fydelta;
 	  }
-	  rhs+=rhs_i;                         /* add loss to rhs */
+	  rhs+=rhs_i;                         //printf("/* add loss to rhs */\n");
 	  
 	  rt_total+=MAX(get_runtime()-rt1,0);
 
@@ -727,7 +733,7 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 
 	rt1=get_runtime();
 
-	/* create sparse vector from dense sum */
+	//printf("/* create sparse vector from dense sum */\n");
 	if(kparm->kernel_type == LINEAR)
 	  lhs=create_svector_n_r(lhs_n,sm->sizePsi,NULL,1.0,
 				 COMPACT_ROUNDING_THRESH);
@@ -941,7 +947,7 @@ void find_most_violated_constraint(SVECTOR **fydelta, double *rhs,
     /* continue; */
   }
   
-  /**** get psi(x,y) and psi(x,ybar) ****/
+  //printf("/**** get psi(x,y) and psi(x,ybar) ****/\n");
   if(struct_verbosity>=2) rt2=get_runtime();
   if(fycached)
     fy=copy_svector(fycached); 
@@ -952,7 +958,7 @@ void find_most_violated_constraint(SVECTOR **fydelta, double *rhs,
   lossval=loss(ex->y,ybar,sparm);
   free_label(ybar);
   
-  /**** scale feature vector and margin by loss ****/
+  //printf("/**** scale feature vector and margin by loss ****/\n");
   if(sparm->loss_type == SLACK_RESCALING)
     factor=lossval/n;
   else                 /* do not rescale vector for */
@@ -960,9 +966,10 @@ void find_most_violated_constraint(SVECTOR **fydelta, double *rhs,
   mult_svector_list(fy,factor);
   mult_svector_list(fybar,-factor);
   append_svector_list(fybar,fy);   /* compute fy-fybar */
-
   (*fydelta)=fybar;
+  //for(int i = 0; i < 10;i++)
   (*rhs)=lossval/n;
+  //printf("%f \n",lossval/n);
 }
 
 

@@ -75,7 +75,7 @@ int main()
     int smallTest;
     smallTest = 0;
     totNum = 0;
-	while(getline(train,temp)&&(smallTest<2000) ){
+	while(getline(train,temp)){
 		pos = temp.find(' ');
 		frameName.push_back( uttereenceID(temp.substr(0,pos)) );
 		content.push_back( temp.substr(pos) );
