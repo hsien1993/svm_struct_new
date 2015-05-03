@@ -56,7 +56,6 @@
 typedef struct viterbi_path {
   double    score;                  /* viterbi score */
   int       label;                  /* label in current state */
-  long      frame;                  /* index that summarizes history of state */
   int       pre;
 } VPATH;
 
