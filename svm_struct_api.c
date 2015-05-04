@@ -272,10 +272,6 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     node[0][i].pre = i;
     node[0][i].label = i;
     node[0][i].score = 0;
-    //loss
-    //if(i != y.phone[0])
-    //  node[0][i].score += 1.0;
-    //printf("node[0][%d].score = %f\n",i,node[0][i].score);
   }
 
   //find viterbi path
@@ -283,17 +279,14 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     //observation
     for(i = 0; i < PhoneNum; i++){
       for(j = 0; j < Dim; j++){
-        obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim]);
+        obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim+1]);
       }
     }
     //transition
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
       for(j = 0; j < PhoneNum; j++){
-        transValue = node[f-1][j].score + sm->w[PhoneNum*(Dim+i)+j];
-        //for(k = 0; k < Dim; k++){
-        //  obserValue += x.feature[k+(f-1)*Dim]*(sm->w[k+j*Dim]);
-        //}
+        transValue = node[f-1][j].score + sm->w[PhoneNum*(Dim+i)+j+1];
         Value[j] = transValue + obserValue[j];
       }
       temp = Value[0];
@@ -339,11 +332,6 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   for(i = 0; i < y.frameNum; i++)
     free(node[i]);
   free(node);
-  //free(Value);
-
-//  for(i = 0; i < y.frameNum; i++)
-//    printf("[%d] %d \n",i, ybar.phone[i]);
-//  printf("\n====%d====\n",i);
 
   return(ybar);
 }
@@ -502,6 +490,10 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 			       STRUCT_LEARN_PARM *sparm)
 {
   /* Writes structural model sm to file file. */
+  FILE *modelfile;
+  
+  modelfile = fopen(file,"w");
+  
 }
 
 STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
