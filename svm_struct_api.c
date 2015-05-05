@@ -355,6 +355,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   for(f = 1; f < y.frameNum; f++){
     //observation
     for(i = 0; i < PhoneNum; i++){
+      obserValue[i] = 0;
       for(j = 0; j < Dim; j++){
         obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim+1]);
       }
@@ -363,15 +364,15 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     //transition
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
+      //from j to i
       for(j = 0; j < PhoneNum; j++){
-        transValue = sm->w[PhoneNum*(Dim+i)+j+1];
+        transValue = sm->w[PhoneNum*(Dim+j)+i+1];
         Value[j] = transValue + obserValue[j] + node[f-1][j].score;
       }
 
       //find Max
       temp = Value[0];
       for(j = 0; j < PhoneNum; j++){
-       // printf("%f ",Value[j]);
         if(temp <= Value[j]){
           temp = Value[j];
           index = j;
@@ -412,9 +413,9 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     if(f>0)pre = node[f][index].pre; 
   }
 
-  //for(f = 0; f < y.frameNum; f++)
-  //  printf("%d ", ybar.phone[f]);
-  //printf("\n");
+  for(f = 0; f < y.frameNum; f++)
+    printf("%d ", ybar.phone[f]);
+  printf("\n");
   for(i = 0; i < y.frameNum; i++)
     free(node[i]);
   free(node);
