@@ -100,7 +100,7 @@ SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
 
     //y
     read = getline(&line, &len, train);
-    if(strcmp(line,"NULL")){
+    if(!strcmp(line,"NULL")){
       examples[n].y.frameNum = 0;
     }
     else{
@@ -359,7 +359,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
         obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim+1]);
       }
     }
-    
+
     //transition
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
@@ -371,11 +371,13 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       //find Max
       temp = Value[0];
       for(j = 0; j < PhoneNum; j++){
+       // printf("%f ",Value[j]);
         if(temp <= Value[j]){
           temp = Value[j];
           index = j;
         }
       }
+     // printf("\n");
       maxValue = temp;
 
       node[f][i].pre = index;
@@ -410,9 +412,9 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     if(f>0)pre = node[f][index].pre; 
   }
 
-  for(f = 0; f < y.frameNum; f++)
-    printf("%d ", ybar.phone[f]);
-  printf("\n");
+  //for(f = 0; f < y.frameNum; f++)
+  //  printf("%d ", ybar.phone[f]);
+  //printf("\n");
   for(i = 0; i < y.frameNum; i++)
     free(node[i]);
   free(node);
