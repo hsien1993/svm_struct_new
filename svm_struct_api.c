@@ -100,12 +100,17 @@ SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
 
     //y
     read = getline(&line, &len, train);
-    token = strtok(line, " ");
-    i = 0;     
-    //while((token != NULL) && (i < examples[n].y.frameNum)){
-    for(i = 0;i < examples[n].y.frameNum;i++){
-      examples[n].y.phone[i] = atoi(token);
-      token = strtok(NULL, " ");
+    if(strcmp(line,"NULL")){
+      examples[n].y.frameNum = 0;
+    }
+    else{
+      token = strtok(line, " ");
+      i = 0;     
+      //while((token != NULL) && (i < examples[n].y.frameNum)){
+      for(i = 0;i < examples[n].y.frameNum;i++){
+        examples[n].y.phone[i] = atoi(token);
+        token = strtok(NULL, " ");
+      }
     }
 
     //x
@@ -192,6 +197,78 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
   LABEL y;
 
   /* insert your code for computing the predicted label y here */
+  int i,j,f,index;
+  float Value[PhoneNum];
+  float obserValue[PhoneNum];
+  float temp,transValue,maxValue;
+  VPATH **node;
+  int   pre;
+  int   frameNum = x.frameNum;
+
+  node = (VPATH**)my_malloc(sizeof(VPATH*)*frameNum);
+  for(i = 0; i < frameNum; i++){
+    node[i] = (VPATH*)my_malloc(sizeof(VPATH)*PhoneNum);
+  }
+
+  //start Viterbi
+  for(i = 0; i < PhoneNum; i++){
+    node[0][i].pre = i;
+    node[0][i].label = i;
+    node[0][i].score = 0;
+  }
+
+  //find viterbi path
+  for(f = 1; f < frameNum; f++){
+    //observation
+    for(i = 0; i < PhoneNum; i++){
+      for(j = 0; j < Dim; j++){
+        obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim+1]);
+      }
+    }
+    //transition
+    for(i = 0; i < PhoneNum; i++){
+      node[f][i].label = i;
+      for(j = 0; j < PhoneNum; j++){
+        transValue = sm->w[PhoneNum*(Dim+i)+j+1];
+        Value[j] = transValue + obserValue[j] + node[f-1][j].score;
+      }
+      temp = Value[0];
+      for(j = 0; j < PhoneNum; j++){
+        if(temp <= Value[j]){
+          temp = Value[j];
+          index = j;
+        }
+      }
+      maxValue = temp;
+      node[f][i].pre = index;
+      node[f][i].score = maxValue;    
+    }
+  }
+
+  //end viterbi
+  //printf("end viterbi\n");
+  maxValue = node[frameNum-1][0].score;
+  for(i = 0; i < PhoneNum; i++){
+    if(maxValue < node[frameNum-1][i].score){
+      maxValue = node[frameNum-1][i].score;
+      index = i;
+    }
+  }
+
+  //trance back
+  y.frameID = (char*)my_malloc(sizeof(char)*strlen(x.frameID));
+  strcpy(y.frameID, x.frameID);
+  y.phone = (int*)my_malloc(sizeof(int)*frameNum);
+  y.frameNum = frameNum;
+  pre = node[frameNum-1][index].pre;
+  for(f = x.frameNum-1; f >=0; f--){
+    index = node[f][pre].label;
+    y.phone[f] = index;
+    if(f>0) pre = node[f][index].pre; 
+  }
+  for(i = 0; i < frameNum; i++)
+    free(node[i]);
+  free(node);
 
   return(y);
 }
@@ -282,13 +359,16 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
         obserValue[i]+= x.feature[j+(f-1)*Dim]*(sm->w[j+i*Dim+1]);
       }
     }
+    
     //transition
     for(i = 0; i < PhoneNum; i++){
       node[f][i].label = i;
       for(j = 0; j < PhoneNum; j++){
-        transValue = node[f-1][j].score + sm->w[PhoneNum*(Dim+i)+j+1];
-        Value[j] = transValue + obserValue[j];
+        transValue = sm->w[PhoneNum*(Dim+i)+j+1];
+        Value[j] = transValue + obserValue[j] + node[f-1][j].score;
       }
+
+      //find Max
       temp = Value[0];
       for(j = 0; j < PhoneNum; j++){
         if(temp <= Value[j]){
@@ -301,7 +381,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       node[f][i].pre = index;
       node[f][i].score = maxValue;
       //loss
-      if(i != y.phone[f]){
+      if(index != y.phone[f]){
         node[f][i].score += 1.0;      
       }
     }
@@ -329,6 +409,10 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     ybar.phone[f] = index;
     if(f>0)pre = node[f][index].pre; 
   }
+
+  for(f = 0; f < y.frameNum; f++)
+    printf("%d ", ybar.phone[f]);
+  printf("\n");
   for(i = 0; i < y.frameNum; i++)
     free(node[i]);
   free(node);
@@ -342,6 +426,9 @@ int         empty_label(LABEL y)
      returned by find_most_violated_constraint_???(x, y, sm) if there
      is no incorrect label that can be found for x, or if it is unable
      to label x at all */
+  if(y.frameNum == 0) 
+    return 1;
+
   return(0);
 }
 
@@ -491,8 +578,17 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 {
   /* Writes structural model sm to file file. */
   FILE *modelfile;
+  int i;
   
   modelfile = fopen(file,"w");
+
+  fprintf(modelfile, "%d\n", sm->sizePsi);
+
+  for(i = 0; i < sm->sizePsi; i++){
+    fprintf(modelfile, "%f ", sm->w[i+1]);
+  }
+
+  fclose(modelfile);
   
 }
 
@@ -500,11 +596,56 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 {
   /* Reads structural model sm from file file. This function is used
      only in the prediction module, not in the learning module. */
+
+  FILE *modelfile;
+  int i,sizePsi;
+  STRUCTMODEL sm;
+  
+
+  modelfile = fopen(file,"r");
+
+  fscanf(modelfile, "%d", &sizePsi);
+
+  sm.sizePsi = sizePsi;
+
+  sm.w = (double*)my_malloc(sizeof(double)*(sizePsi+1));
+
+  for(i = 0; i < sizePsi; i++){
+    fscanf(modelfile, "%f ", &sm.w[i+1]);
+  }
+  fclose(modelfile);
+
+  return sm;
 }
 
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
+  char map[48] = {'a','b','c','d','e','f',
+                  'g','h','i','j','k','l',
+                  'm','n','o','p','q','r',
+                  's','t','u','v','w','x',
+                  'y','z','A','B','C','D',
+                  'E','F','G','H','I','J',
+                  'K','L','M','N','O','P',
+                  'Q','R','S','T','U','V'};
+  int isBegin = 0;
+  int i;
+
+  fprintf(fp, "%s,", y.frameID);
+  for(i = 0; i < y.frameNum-1; i++){
+    if(0 == isBegin){
+      if(37 == y.phone[i])
+        isBegin = 1;
+    }
+    else if(i == y.frameNum-2){
+      fclose(fp);
+    }
+    else{
+      if(y.phone[i]!=y.phone[i+1])
+        fprintf(fp, "%c", map[y.phone[i]]);
+    }
+  }
 } 
 
 void        free_pattern(PATTERN x) {
