@@ -21,7 +21,10 @@
 #include "svm_struct_learn.h"
 #include "svm_struct_common.h"
 #include "../svm_struct_api.h"
+<<<<<<< HEAD
 #include <omp.h>
+=======
+>>>>>>> 6ed0996e881a4015caee66617e221766dac03a07
 #include <assert.h>
 
 #define MAX(x,y)      ((x) < (y) ? (y) : (x))
@@ -705,7 +708,11 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	  clear_nvector(lhs_n,sm->sizePsi);
 	progress=0;
 	rt_total+=MAX(get_runtime()-rt1,0);
+<<<<<<< HEAD
 #pragma omp parallel for private (rt1, rhs_i, fydelta) reduction(+:rhs, rt_total, rt_viol, rt_psi, argmax_count)
+=======
+
+>>>>>>> 6ed0996e881a4015caee66617e221766dac03a07
 	for(i=0; i<n; i++) {
 	  rt1=get_runtime();
 
