@@ -705,7 +705,7 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	  clear_nvector(lhs_n,sm->sizePsi);
 	progress=0;
 	rt_total+=MAX(get_runtime()-rt1,0);
-#pragma omg parallel for private (rt1, rhs_i, fydelta) reduction(+:rhs, rt_total, rt_viol, rt_psi, argmax_count)
+#pragma omp parallel for private (rt1, rhs_i, fydelta) reduction(+:rhs, rt_total, rt_viol, rt_psi, argmax_count)
 	for(i=0; i<n; i++) {
 	  rt1=get_runtime();
 
