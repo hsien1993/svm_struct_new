@@ -419,9 +419,9 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     if(f>0)pre = node[f][index].pre; 
   }
 
-  for(f = 0; f < frameNum; f++)
-    printf("%d ", ybar.phone[f]);
-  printf("\n");
+  //for(f = 0; f < frameNum; f++)
+  //  printf("%d ", ybar.phone[f]);
+  //printf("\n");
   for(i = 0; i < frameNum; i++)
     free(node[i]);
   free(node);
@@ -649,7 +649,7 @@ void        free_pattern(PATTERN x) {
 void        free_label(LABEL y) {
   /* Frees the memory of y. */
   free(y.frameID);
-  free(y.feature);
+  free(y.phone);
 }
 
 void        free_struct_model(STRUCTMODEL sm) 
