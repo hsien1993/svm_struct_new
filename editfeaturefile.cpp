@@ -53,13 +53,10 @@ int phone2int(string phone){
 int main()
 {
 	map<string, int> out;
-<<<<<<< HEAD
 	ifstream train("test.ark");
 	//ifstream lab("../label/train.lab");
-=======
 	ifstream train("train.ark");
 	ifstream lab("../label/train.lab");
->>>>>>> 6ed0996e881a4015caee66617e221766dac03a07
 
 	string temp,features;
 	string space = " ";
