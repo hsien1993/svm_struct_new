@@ -7,8 +7,8 @@ LD = gcc
 #Call 'make' using the following line to make CYGWIN produce stand-alone Windows executables
 #		make 'SFLAGS=-mno-cygwin'
 
-CFLAGS =    $(SFLAGS) -O3 -fomit-frame-pointer -ffast-math -Wall 
-LDFLAGS =   $(SFLAGS) -O3 -lm -Wall
+CFLAGS =    $(SFLAGS) -O3 -fomit-frame-pointer -ffast-math -fopenmp -Wall 
+LDFLAGS =   $(SFLAGS) -O3 -lm -fopenmp -Wall
 #CFLAGS =   $(SFLAGS) -pg -Wall
 #LDFLAGS =  $(SFLAGS) -pg -Wall
 LIBS=-L. -lm 

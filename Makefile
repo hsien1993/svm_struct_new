@@ -7,8 +7,8 @@
 CC = gcc
 LD = gcc
 
-CFLAGS =   $(SFLAGS) -O3 -fomit-frame-pointer -ffast-math -Wall 
-LDFLAGS =  $(SFLAGS) -O3 -Wall -lm 
+CFLAGS =   $(SFLAGS) -O3 -fomit-frame-pointer -ffast-math -fopenmp -Wall 
+LDFLAGS =  $(SFLAGS) -O3 -fopenmp -Wall -lm 
 #CFLAGS =  $(SFLAGS) -pg -Wall 
 #LDFLAGS = $(SFLAGS) -pg -Wall -lm
 LIBS = -lm
