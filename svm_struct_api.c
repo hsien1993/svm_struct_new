@@ -42,6 +42,7 @@ void        svm_struct_classify_api_init(int argc, char* argv[])
 {
   /* Called in prediction part before anything else is done to allow
      any initializations that might be necessary. */
+  printf("prediction\n");
 }
 
 void        svm_struct_classify_api_exit()
@@ -73,11 +74,13 @@ SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
   char*    token;
   int      frameNum;
   /* read file */  
+  
+  fflush(stdout);
   train = fopen(file,"r");
+
 
   n = 0;
   examples = (EXAMPLE*)my_malloc(sizeof(EXAMPLE));
-
   int i = 0; // for iteration
   while( (read = getline(&line, &len, train)) != -1 ){
     line = chomp(line);
@@ -95,15 +98,18 @@ SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
     examples[n].x.frameNum = frameNum;
     examples[n].y.frameNum = frameNum;
 
-    examples[n].y.phone   = (int*)my_malloc(sizeof(int)*frameNum);
+
     examples[n].x.feature = (float*)my_malloc(sizeof(float)*frameNum*Dim);
 
     //y
     read = getline(&line, &len, train);
-    if(!strcmp(line,"NULL")){
+    if(!strcmp(line,"NULL\n")){
       examples[n].y.frameNum = 0;
+      examples[n].y.phone   = (int*)my_malloc(sizeof(int)*frameNum+1);
+      //free(examples[n].y.phone);
     }
     else{
+      examples[n].y.phone   = (int*)my_malloc(sizeof(int)*frameNum);
       token = strtok(line, " ");
       i = 0;     
       //while((token != NULL) && (i < examples[n].y.frameNum)){
@@ -270,6 +276,9 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     y.phone[f] = index;
     if(f>0)pre = node[f][index].pre; 
   }
+  //for(f = 0; f<frameNum; f++)
+  //  printf("%d ",y.phone[f]);
+  //printf("\n");
 
   for(i = 0; i < frameNum; i++)
     free(node[i]);
@@ -588,8 +597,18 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   /* Writes structural model sm to file file. */
   FILE *modelfile;
   int i;
-  
-  modelfile = fopen(file,"w");
+
+  char* WW;
+
+  WW = (char*)my_malloc(sizeof(char)*30);
+
+  strcpy(WW,file);
+
+  strcat(WW,".weight");
+
+  write_model(file,sm->svm_model);
+
+  modelfile = fopen(WW,"w");
 
   fprintf(modelfile, "%d\n", sm->sizePsi);
 
@@ -609,9 +628,14 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
   FILE *modelfile;
   int i,sizePsi;
   STRUCTMODEL sm;
-  
+  char* WW;
+  WW = (char*)my_malloc(sizeof(char)*30);
+  strcpy(WW,file);
+  strcat(WW,".weight");  
 
-  modelfile = fopen(file,"r");
+  sm.svm_model=read_model(file);
+
+  modelfile = fopen(WW,"r");
 
   fscanf(modelfile, "%d", &sizePsi);
 
@@ -619,9 +643,14 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 
   sm.w = (double*)my_malloc(sizeof(double)*(sizePsi+1));
 
-  for(i = 0; i < sizePsi; i++){
-    fscanf(modelfile, "%f ", &sm.w[i+1]);
+  sm.w[0]=0;
+
+  for(i = 0; i < sm.sizePsi; i++){
+    fscanf(modelfile, "%lf ", &sm.w[i+1]);
   }
+ // for(i = 0; i <= sm.sizePsi; i++){
+ //   printf("%d: %lf\n",i, sm.w[i]);
+ // }
   fclose(modelfile);
 
   return sm;
@@ -630,14 +659,20 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
+  char ALL[48][4] = {   "aa", "ae", "ah", "ao", "aw", "ax",
+                        "ay",  "b", "ch", "cl",  "d", "dh",
+                        "dx", "eh", "el", "en","epi", "er",
+                        "ey",  "f",  "g", "hh", "ih", "ix",
+                        "iy", "jh",  "k",  "l",  "m", "ng",
+                         "n", "ow", "oy",  "p",  "r", "sh",
+                       "sil",  "s", "th",  "t", "uh", "uw",
+                       "vcl",  "v",  "w",  "y", "zh",  "z" };
   int i;
 
-  fprintf(fp, "%s,", y.frameID);
+  //fprintf(fp, "%s,", y.frameID);
   for(i = 0; i < y.frameNum-1; i++){
-    fprintf(fp, "%d ", y.phone[i]);
+    fprintf(fp, "%s_%d,%d\n",y.frameID,i+1,y.phone[i]);
   }
-  fprintf(fp, "\n");
-  fclose(fp);
 } 
 
 void        free_pattern(PATTERN x) {
